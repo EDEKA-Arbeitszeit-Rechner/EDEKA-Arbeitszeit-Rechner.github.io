@@ -500,13 +500,17 @@
 
     function updateLiveDateTime() {
         const now = new Date();
-        const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-        const formattedDate = now.toLocaleDateString('de-DE', options);
+        const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        const weekdayOptions = { weekday: 'long' }; // Option für den Wochentag
+
+        const formattedDate = now.toLocaleDateString('de-DE', dateOptions);
+        const formattedWeekday = now.toLocaleDateString('de-DE', weekdayOptions); // Wochentag abrufen
         const weekNumber = getWeekNumber(now);
 
         const displayElement = document.getElementById('live-datetime-display');
         if (displayElement) {
-            displayElement.innerHTML = `${formattedDate}<br>KW: ${weekNumber}`;
+            // Änderung hier: Wochentag hinzugefügt, <br> wieder eingefügt
+            displayElement.innerHTML = `${formattedWeekday}<br>${formattedDate}<br>KW: ${weekNumber}`;
         }
     }
 
@@ -521,6 +525,7 @@
 </body>
 
 </html>
+
 
 
 
