@@ -247,6 +247,19 @@
             display: inline-block;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
+        .live-datetime-display {
+            position: absolute;
+            bottom: 10px; /* Abstand vom unteren Rand */
+            right: 10px; /* Abstand vom rechten Rand */
+            color: white; /* Weiße Schrift */
+            font-size: 14px;
+            z-index: 10; /* Sicherstellen, dass es über anderen Elementen liegt */
+            text-align: right;
+            background-color: rgba(0,0,0,0.5); /* Leichter, halbtransparenter Hintergrund für bessere Lesbarkeit */
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -316,6 +329,8 @@
 <div class="footer">
     <p>Made by Paul Ziese</p>
 </div>
+<div id="live-datetime-display" class="live-datetime-display"></div>
+
 <script>
     function hideGlobalHint() {
         const globalHint = document.getElementById('globalHint');
@@ -474,10 +489,43 @@
             resultDiv.textContent = "Bitte gib entweder Stunden & Minuten ODER Dezimalstunden ein, nicht beides oder keines.";
         }
     }
+
+     function getWeekNumber(d) {
+        // Eine Kopie des Datums, um das Original nicht zu ändern
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        // Setze auf den nächsten Donnerstag, da die ISO-Woche mit der Woche beginnt, die den ersten Donnerstag des Jahres enthält
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        // Ersten Tag des Jahres holen
+        var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        // Berechne die Anzahl der vollen Wochen seit Jahresbeginn
+        var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return weekNo;
+    }
+
+    function updateLiveDateTime() {
+        const now = new Date();
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        const formattedDate = now.toLocaleDateString('de-DE', options);
+        const weekNumber = getWeekNumber(now);
+
+        const displayElement = document.getElementById('live-datetime-display');
+        if (displayElement) {
+            displayElement.innerHTML = `Datum: ${formattedDate}<br>KW: ${weekNumber}`;
+        }
+    }
+
+    // Beim Laden der Seite die Funktion einmal ausführen
+    document.addEventListener('DOMContentLoaded', () => {
+        updateLiveDateTime();
+        // Und dann jede Minute aktualisieren
+        setInterval(updateLiveDateTime, 1000 * 60);
+    });
+
 </script>
 </body>
 
 </html>
+
 
 
 
