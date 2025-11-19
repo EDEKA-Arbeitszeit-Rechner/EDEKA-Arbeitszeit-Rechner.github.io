@@ -436,7 +436,7 @@
                 const formatiertFehlendeZeit = formatHoursMinutes(fehlendeZeitMinuten);
                 
                 ergebnisHTML += `
-                    <p class="negative">Fehlende Zeit: ${fehlendeZeitInStunden.toFixed(2)} Stunden (${formatiertFehlendeZeit})</p>
+                    <p class="negative">Minusstunden: ${fehlendeZeitInStunden.toFixed(2)} Stunden (${formatiertFehlendeZeit})</p>
                 `;
                 resultDiv.classList.add('negative');
             } else if (vergleichsArbeitszeit > vergleichsErforderlicheArbeitszeit) {
@@ -528,6 +528,7 @@
 </body>
 
 </html>
+
 
 
 
