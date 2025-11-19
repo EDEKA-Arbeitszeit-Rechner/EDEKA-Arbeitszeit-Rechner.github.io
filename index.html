@@ -422,9 +422,12 @@
             
             const vergleichsArbeitszeit = parseFloat(arbeitszeitInStunden.toFixed(2));
             const vergleichsErforderlicheArbeitszeit = parseFloat(erforderlicheArbeitszeit.toFixed(2));
+            
+            const arbeitszeitTotalMinutes = Math.round(arbeitszeitInStunden * 60);
+            const formatiertArbeitszeit = formatHoursMinutes(arbeitszeitTotalMinutes);
+            
             let ergebnisHTML = `
-                <p>Arbeitszeit: ${arbeitszeitInStunden.toFixed(2)} Stunden</p>
-                <p>In Minuten: ${Math.round(arbeitszeitInStunden * 60)} Minuten</p>
+                <p>Arbeitszeit: ${arbeitszeitInStunden.toFixed(2)} Stunden (${formatiertArbeitszeit})</p>
             `;
             resultDiv.classList.remove('negative', 'positive', 'neutral');
             if (vergleichsArbeitszeit < vergleichsErforderlicheArbeitszeit) {
@@ -525,6 +528,7 @@
 </body>
 
 </html>
+
 
 
 
