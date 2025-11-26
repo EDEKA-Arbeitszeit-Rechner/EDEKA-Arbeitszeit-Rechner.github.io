@@ -143,6 +143,32 @@
             transform: translateY(1px);
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
+
+        /* NEUER STIL für den Speicher-Button */
+        .save-button {
+            background-color: #FFD600; /* Gleiche Farbe wie andere Buttons */
+            color: black;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease;
+            font-size: 16px; /* Etwas kleiner */
+            padding: 8px 15px; /* Etwas weniger Padding */
+            border-radius: 5px;
+            margin: 5px auto 15px auto; /* Zentriert und mit etwas Abstand */
+            display: block; /* Nimmt eigene Zeile ein, aber Breite passt sich an */
+            width: auto; /* Breite passt sich dem Inhalt an */
+            text-align: center; /* Text zentrieren, falls Button kleiner als Textfläche */
+        }
+        .save-button:hover {
+            background-color: #f0c300;
+        }
+        .save-button:active {
+            background-color: #d8b800;
+            transform: translateY(1px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        /* Ende NEUER STIL */
+
         .result {
             text-align: center;
             margin-top: 20px;
@@ -246,7 +272,6 @@
             display: inline-block;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
         .live-datetime-display {
             position: absolute;
             bottom: 10px; /* Abstand vom unteren Rand */
@@ -274,6 +299,8 @@
         </details>
         <label for="start-time">Arbeitsbeginn:</label>
         <input type="time" id="start-time" required>
+        <!-- NEUER BUTTON MIT ANGEPASSTEM STIL: Zum Speichern des Arbeitsbeginns im localStorage -->
+        <button type="button" onclick="saveAndDisplayStartTime()" class="save-button">Arbeitsbeginn speichern</button>
         <label for="day">Wochentag:</label>
         <select id="day">
             <option value="montag-donnerstag">Montag - Donnerstag</option>
@@ -326,8 +353,10 @@
     <p>Made by Paul Ziese</p>
 </div>
 <div id="live-datetime-display" class="live-datetime-display"></div>
-
 <script>
+    // Konstante für den localStorage-Schlüssel
+    const LS_START_TIME_KEY = 'edeka_arbeitsbeginn_gespeichert';
+
     function hideGlobalHint() {
         const globalHint = document.getElementById('globalHint');
         if (globalHint) {
@@ -340,6 +369,27 @@
             globalHint.classList.remove('hidden');
         }
     }
+    
+    // NEUE FUNKTION: Speichert den Arbeitsbeginn im localStorage
+    function saveAndDisplayStartTime() {
+        const startTime = document.getElementById("start-time").value;
+        if (startTime) {
+            localStorage.setItem(LS_START_TIME_KEY, startTime);
+            alert(`Arbeitsbeginn "${startTime}" wurde gespeichert und wird beim nächsten Laden vorausgefüllt.`);
+        } else {
+            alert("Bitte gib zuerst einen Arbeitsbeginn ein, bevor du ihn speicherst.");
+        }
+    }
+
+    // NEUE FUNKTION: Lädt den Arbeitsbeginn aus dem localStorage und füllt die Felder
+    function loadSavedStartTime() {
+        const savedTime = localStorage.getItem(LS_START_TIME_KEY);
+        if (savedTime) {
+            document.getElementById("start-time").value = savedTime;
+            document.getElementById("start").value = savedTime; // Auch für den zweiten Rechner
+        }
+    }
+
     function resetAllFields() {
         document.querySelectorAll('input[type="time"], input[type="number"], input[type="text"]').forEach(input => {
             input.value = '';
@@ -351,8 +401,11 @@
             resultDiv.textContent = '';
             resultDiv.classList.remove('negative', 'positive', 'neutral');
         });
+        // ERWEITERUNG: Gespeicherten Arbeitsbeginn im localStorage löschen
+        localStorage.removeItem(LS_START_TIME_KEY);
         showGlobalHint();
     }
+
     function berechneArbeitsschluss() {
         const startTime = document.getElementById("start-time").value;
         const day = document.getElementById("day").value;
@@ -387,6 +440,7 @@
         const formattedEndTime = String(endHour).padStart(2, "0") + ":" + String(endMinute).padStart(2, "0") + " Uhr" + nextDayText;
         document.getElementById("end-time").textContent = "Dein Arbeitsschluss ist um: " + formattedEndTime;
     }
+
     function formatHoursMinutes(totalMinutes) {
         if (totalMinutes === 0) {
             return "0 Minuten";
@@ -397,32 +451,38 @@
         if (hours > 0) {
             parts.push(`${hours} Stunden`);
         }
-        if (minutes > 0 || (hours === 0 && minutes === 0)) {
+        if (minutes > 0 || (hours === 0 && minutes === 0)) { 
             parts.push(`${minutes} Minuten`);
         }
         return parts.join(' ');
     }
+
     function berechneArbeitszeit() {
         hideGlobalHint();
         const startZeit = document.getElementById('start').value;
         const endZeit = document.getElementById('end').value;
         const pauseMinuten = parseInt(document.getElementById('pause').value);
         const erforderlicheArbeitszeit = pauseMinuten === 25 ? 4.83 : 8.42;
+
         if (startZeit && endZeit) {
-            const start = new Date(`1970-01-01T${startZeit}:00`);
-            const end = new Date(`1970-01-01T${endZeit}:00`);
-            let differenzInMillisekunden = end - start;
-            if (differenzInMillisekunden < 0) {
-                differenzInMillisekunden += 24 * 60 * 60 * 1000;
+            const [startHour, startMinute] = startZeit.split(':').map(Number);
+            const [endHour, endMinute] = endZeit.split(':').map(Number);
+
+            let totalStartMinutes = startHour * 60 + startMinute;
+            let totalEndMinutes = endHour * 60 + endMinute;
+
+            if (totalEndMinutes < totalStartMinutes) {
+                totalEndMinutes += 24 * 60; 
             }
-            const pauseInMillisekunden = pauseMinuten * 60 * 1000;
-            differenzInMillisekunden -= pauseInMillisekunden;
-            const arbeitszeitInStunden = differenzInMillisekunden / (1000 * 60 * 60);
+
+            let differenzInMinuten = totalEndMinutes - totalStartMinutes;
+            differenzInMinuten -= pauseMinuten; 
+
+            const arbeitszeitInStunden = differenzInMinuten / 60;
+
             const resultDiv = document.getElementById('result');
-            
             const vergleichsArbeitszeit = parseFloat(arbeitszeitInStunden.toFixed(2));
             const vergleichsErforderlicheArbeitszeit = parseFloat(erforderlicheArbeitszeit.toFixed(2));
-            
             const arbeitszeitTotalMinutes = Math.round(arbeitszeitInStunden * 60);
             const formatiertArbeitszeit = formatHoursMinutes(arbeitszeitTotalMinutes);
             
@@ -430,11 +490,11 @@
                 <p>Arbeitszeit: ${arbeitszeitInStunden.toFixed(2)} Stunden (${formatiertArbeitszeit})</p>
             `;
             resultDiv.classList.remove('negative', 'positive', 'neutral');
+
             if (vergleichsArbeitszeit < vergleichsErforderlicheArbeitszeit) {
                 const fehlendeZeitInStunden = erforderlicheArbeitszeit - arbeitszeitInStunden;
-                const fehlendeZeitMinuten = Math.round(fehlendeZeitInStunden * 60); 
+                const fehlendeZeitMinuten = Math.round(fehlendeZeitInStunden * 60);
                 const formatiertFehlendeZeit = formatHoursMinutes(fehlendeZeitMinuten);
-                
                 ergebnisHTML += `
                     <p class="negative">Minusstunden: ${fehlendeZeitInStunden.toFixed(2)} Stunden (${formatiertFehlendeZeit})</p>
                 `;
@@ -458,6 +518,7 @@
             alert('Bitte geben Sie Startzeit und Endzeit ein.');
         }
     }
+
     function rechneDezimalstunden() {
         const hoursInput = document.getElementById("hours-decimal").value.trim();
         const minutesInput = document.getElementById("minutes-decimal").value.trim();
@@ -490,13 +551,9 @@
     }
 
      function getWeekNumber(d) {
-        // Eine Kopie des Datums, um das Original nicht zu ändern
         d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        // Setze auf den nächsten Donnerstag, da die ISO-Woche mit der Woche beginnt, die den ersten Donnerstag des Jahres enthält
         d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-        // Ersten Tag des Jahres holen
         var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        // Berechne die Anzahl der vollen Wochen seit Jahresbeginn
         var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         return weekNo;
     }
@@ -504,46 +561,22 @@
     function updateLiveDateTime() {
         const now = new Date();
         const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-        const weekdayOptions = { weekday: 'long' }; // Option für den Wochentag
-
+        const weekdayOptions = { weekday: 'long' }; 
         const formattedDate = now.toLocaleDateString('de-DE', dateOptions);
-        const formattedWeekday = now.toLocaleDateString('de-DE', weekdayOptions); // Wochentag abrufen
+        const formattedWeekday = now.toLocaleDateString('de-DE', weekdayOptions); 
         const weekNumber = getWeekNumber(now);
-
         const displayElement = document.getElementById('live-datetime-display');
         if (displayElement) {
-            // Änderung hier: Wochentag hinzugefügt, <br> wieder eingefügt
             displayElement.innerHTML = `${formattedWeekday}<br>${formattedDate}<br>KW: ${weekNumber}`;
         }
     }
 
-    // Beim Laden der Seite die Funktion einmal ausführen
     document.addEventListener('DOMContentLoaded', () => {
         updateLiveDateTime();
-        // Und dann jede Minute aktualisieren
         setInterval(updateLiveDateTime, 1000 * 60);
+        
+        loadSavedStartTime(); 
     });
-
 </script>
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
